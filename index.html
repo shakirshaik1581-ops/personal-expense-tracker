@@ -13,7 +13,9 @@
         button { background-color: #28a745; color: white; border: none; font-size: 16px; cursor: pointer; }
         button:hover { background-color: #218838; }
         ul { list-style-type: none; padding: 0; }
-        li { padding: 10px; background: #f9f9f9; margin-bottom: 5px; border-left: 5px solid #dc3545; display: flex; justify-content: space-between; }
+        li { padding: 10px; background: #f9f9f9; margin-bottom: 5px; border-left: 5px solid #dc3545; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { width: auto; padding: 2px 8px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; font-size: 12px; }
+        .delete-btn:hover { background-color: #c82333; }
         .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
     </style>
 </head>
@@ -39,7 +41,12 @@
     <div class="total">Total: \$<span id="total-amount">0.00</span></div>
 
     <script>
-        let total = 0;
+        // Load expenses from local storage when page opens
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+        // Display saved items on startup
+        updateUI();
+
         function addExpense() {
             const desc = document.getElementById('desc').value;
             const amount = parseFloat(document.getElementById('amount').value);
@@ -49,20 +56,52 @@
                 return;
             }
 
-            // Update Total
-            total += amount;
-            document.getElementById('total-amount').innerText = total.toFixed(2);
+            // Create expense object
+            const expense = {
+                id: Date.now(),
+                desc: desc,
+                amount: amount
+            };
 
-            // Add to List
-            const list = document.getElementById('expense-list');
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${desc}</span> <span>$${amount.toFixed(2)}</span>`;
-            list.appendChild(li);
+            // Add to array and save
+            expenses.push(expense);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
 
-            // Clear inputs
+            // Update UI & clear inputs
+            updateUI();
             document.getElementById('desc').value = '';
             document.getElementById('amount').value = '';
+        }
+
+        function deleteExpense(id) {
+            // Remove the selected item
+            expenses = expenses.filter(expense => expense.id !== id);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            updateUI();
+        }
+
+        function updateUI() {
+            const list = document.getElementById('expense-list');
+            list.innerHTML = '';
+            let total = 0;
+
+            expenses.forEach(expense => {
+                total += expense.amount;
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${expense.desc}</span> 
+                    <span>
+                        $${expense.amount.toFixed(2)}
+                        <button class="delete-btn" onclick="deleteExpense(${expense.id})">❌</button>
+                    </span>
+                `;
+                list.appendChild(li);
+            });
+
+            document.getElementById('total-amount').innerText = total.toFixed(2);
         }
     </script>
 </body>
 </html>
+
